@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "prebuild": "python3 scripts/auto_process_pyqs.py",
+    "prebuild": "node -e \"if(!process.env.VERCEL) { try { require('child_process').execSync('python3 scripts/auto_process_pyqs.py', {stdio:'inherit'}); } catch(e){} }\"",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
