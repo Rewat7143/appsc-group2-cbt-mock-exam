@@ -1,10 +1,10 @@
 {
   "active": false,
   "paperId": "paper-02",
-  "paperTitle": "APPSC Group 2 Mains \u2014 Official Paper II",
+  "paperTitle": "APPSC Group 2 Mains — Official Paper II",
   "filename": "APPSC Group 2 (Mains) Examination Official Paper-II (Held On_ 23 Feb, 2025).pdf",
   "stage": "completed",
-  "stageLabel": "Extraction Complete! All 150 questions and answer keys verified.",
+  "stageLabel": "Upload finished! 150 questions and answer keys verified. Ready to start.",
   "currentPage": 0,
   "totalPages": 0,
   "questionsFound": 150,
@@ -13,5 +13,5 @@
   "completed": true,
   "error": null,
   "redirectUrl": "/candidate?paperId=paper-02",
-  "updatedAt": "2026-11-11T06:21:36.100194Z"
+  "updatedAt": "2026-11-11T06:35:00.000Z"
 }

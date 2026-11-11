@@ -203,7 +203,7 @@ def process_paper_file(pdf_path):
         paper_title=paper_title,
         filename=filename,
         stage="completed",
-        stage_label="Extraction Complete! All 150 questions and answer keys verified.",
+        stage_label="Upload finished! 150 questions and answer keys verified. Ready to start.",
         percent=100,
         questions_found=150,
         completed=True,
