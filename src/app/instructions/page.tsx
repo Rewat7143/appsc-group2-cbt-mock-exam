@@ -19,7 +19,7 @@ import { getCandidate, clearExamSession, setActivePaperId } from '@/lib/storage'
 function InstructionsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const paperId = searchParams.get('paperId') || 'paper-01';
+  const paperId = searchParams.get('paperId') || searchParams.get('paper') || 'paper-01';
 
   const [paper, setPaper] = useState(getPaperMetadata(paperId));
   const [candidate, setCandidate] = useState(getCandidate(paperId));

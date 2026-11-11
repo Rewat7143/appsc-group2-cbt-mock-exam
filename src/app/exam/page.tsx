@@ -31,7 +31,7 @@ import SubmitConfirmationModal from '@/components/SubmitConfirmationModal';
 function ExamEngineContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const paperId = searchParams.get('paperId') || 'paper-01';
+  const paperId = searchParams.get('paperId') || searchParams.get('paper') || 'paper-01';
 
   // Exam state
   const [paper, setPaper] = useState<PaperMetadata | undefined>(undefined);

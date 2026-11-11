@@ -1,7 +1,7 @@
 import { PaperMetadata, Question } from '@/types/exam';
 import papersMetadata from '@/data/papers-metadata.json';
 
-// In Next.js App router (client and server), papers can be imported or fetched
+// Return metadata of all registered papers
 export function getAllPapers(): PaperMetadata[] {
   return papersMetadata as PaperMetadata[];
 }
@@ -13,12 +13,36 @@ export function getPaperMetadata(paperId: string): PaperMetadata | undefined {
 
 export async function getPaperQuestions(paperId: string): Promise<Question[]> {
   try {
-    // Dynamic import of paper json
+    // 1. Direct static imports for known papers (instant offline & client-side performance)
     if (paperId === 'paper-01') {
       const data = await import('@/data/papers/paper-01.json');
       return (data.default as unknown) as Question[];
     }
-    // Fallback or generic support
+    if (paperId === 'paper-02') {
+      try {
+        const data = await import('@/data/papers/paper-02.json');
+        return (data.default as unknown) as Question[];
+      } catch {
+        // If not bundled yet, proceed to API fetch below
+      }
+    }
+
+    // 2. Dynamic fetch via API for newly uploaded/extracted papers in client runtime
+    if (typeof window !== 'undefined') {
+      try {
+        const res = await fetch(`/api/papers/${paperId}`, { cache: 'no-store' });
+        if (res.ok) {
+          const fetched = await res.json();
+          if (Array.isArray(fetched) && fetched.length > 0) {
+            return fetched as Question[];
+          }
+        }
+      } catch (e) {
+        console.warn(`Dynamic API fetch failed for ${paperId}`, e);
+      }
+    }
+
+    // 3. Fallback to paper-01
     const fallback = await import('@/data/papers/paper-01.json');
     return (fallback.default as unknown) as Question[];
   } catch (err) {

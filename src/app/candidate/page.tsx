@@ -18,7 +18,7 @@ import { getCandidate, saveCandidate, setActivePaperId } from '@/lib/storage';
 function CandidateDetailsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const paperId = searchParams.get('paperId') || 'paper-01';
+  const paperId = searchParams.get('paperId') || searchParams.get('paper') || 'paper-01';
 
   const [paper, setPaper] = useState(getPaperMetadata(paperId));
   const [candidateName, setCandidateName] = useState('');

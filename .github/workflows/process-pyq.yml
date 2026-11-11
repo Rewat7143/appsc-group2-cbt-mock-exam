@@ -1,0 +1,50 @@
+name: Auto-Process APPSC PYQ Papers
+
+on:
+  push:
+    paths:
+      - 'pyqs/**.pdf'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  process-pyq:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install System Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y tesseract-ocr poppler-utils
+
+      - name: Install Python Libraries
+        run: |
+          python -m pip install --upgrade pip
+          pip install pymupdf opencv-python-headless pytesseract pypdf
+
+      - name: Run Auto Extraction Script
+        run: |
+          python3 scripts/auto_process_pyqs.py
+
+      - name: Commit and Push Processed Papers
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add src/data/papers/*.json src/data/papers-metadata.json public/processing-status.json
+          if git diff --staged --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "feat: auto-extracted question papers from pyqs"
+            git push
+          fi

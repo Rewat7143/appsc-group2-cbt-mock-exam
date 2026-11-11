@@ -27,3 +27,7 @@ yarn-error.log*
 # OS files
 .DS_Store
 *.pem
+
+# Python artifacts
+__pycache__/
+*.pyc

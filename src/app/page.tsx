@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
@@ -13,17 +13,91 @@ import {
   BookOpen,
   Calendar,
   Layers,
+  UploadCloud,
+  FileCheck2,
+  AlertCircle,
+  Loader2,
+  Sparkles,
 } from 'lucide-react';
 import { getAllPapers } from '@/lib/paper-registry';
 import { setActivePaperId } from '@/lib/storage';
+import { PaperMetadata } from '@/types/exam';
+import PaperProgressBar from '@/components/PaperProgressBar';
 
 export default function HomePage() {
   const router = useRouter();
-  const papers = getAllPapers();
+  const [papers, setPapers] = useState<PaperMetadata[]>(getAllPapers());
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [isDragOver, setIsDragOver] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Fetch dynamic papers from API to catch newly processed papers
+  const refreshPapers = async () => {
+    try {
+      const res = await fetch('/api/papers', { cache: 'no-store' });
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+          setPapers(data);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch updated papers', err);
+    }
+  };
+
+  useEffect(() => {
+    refreshPapers();
+  }, []);
 
   const handleStartTest = (paperId: string) => {
     setActivePaperId(paperId);
     router.push(`/candidate?paperId=${paperId}`);
+  };
+
+  const handleFileUpload = async (file: File) => {
+    if (!file.name.toLowerCase().endsWith('.pdf')) {
+      setUploadError('Please select an official APPSC examination PDF file.');
+      return;
+    }
+
+    setIsUploading(true);
+    setUploadError(null);
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const res = await fetch('/api/upload-pyq', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to upload file');
+      }
+
+      // Success: PaperProgressBar will pick up the active processing status automatically
+      refreshPapers();
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Upload failed';
+      setUploadError(message);
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      handleFileUpload(e.dataTransfer.files[0]);
+    }
   };
 
   return (
@@ -82,7 +156,7 @@ export default function HomePage() {
             </span>
             <span className="flex items-center gap-1.5">
               <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-              Instant Score & Full Solutions Review
+              Automatic PDF Extraction & Live Progress
             </span>
           </div>
         </div>
@@ -90,6 +164,9 @@ export default function HomePage() {
 
       {/* Main Papers Selection Section */}
       <main className="max-w-6xl mx-auto px-4 py-10 flex-1 w-full">
+        {/* Real-time Paper Extraction Progress Bar */}
+        <PaperProgressBar onPaperReady={refreshPapers} />
+
         <div className="flex items-center justify-between mb-6 pb-2 border-b border-slate-200">
           <div>
             <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
@@ -104,6 +181,13 @@ export default function HomePage() {
             {papers.length} {papers.length === 1 ? 'Paper Available' : 'Papers Available'}
           </span>
         </div>
+
+        {uploadError && (
+          <div className="mb-6 p-4 rounded-lg bg-red-50 border border-red-200 flex items-center gap-3 text-red-700 text-xs">
+            <AlertCircle className="w-5 h-5 flex-shrink-0" />
+            <span>{uploadError}</span>
+          </div>
+        )}
 
         {/* Papers Card Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -190,13 +274,58 @@ export default function HomePage() {
             </div>
           ))}
 
-          {/* Placeholder cards for future uploaded papers */}
-          <div className="bg-slate-100/70 border-2 border-dashed border-slate-300 rounded-lg p-6 flex flex-col items-center justify-center text-center space-y-2 text-slate-500">
-            <BookOpen className="w-8 h-8 text-slate-400 mb-1" />
-            <h4 className="font-bold text-sm text-slate-700">Add More Question Papers</h4>
-            <p className="text-xs text-slate-500 max-w-xs leading-relaxed">
-              Drop additional question paper PDFs into the <code className="bg-slate-200 px-1 py-0.5 rounded text-slate-700">pyqs/</code> directory. New papers are dynamically registered and rendered here automatically.
-            </p>
+          {/* Interactive Upload & Automatic Extraction Dropzone */}
+          <div
+            onDragOver={(e) => {
+              e.preventDefault();
+              setIsDragOver(true);
+            }}
+            onDragLeave={() => setIsDragOver(false)}
+            onDrop={handleDrop}
+            onClick={() => fileInputRef.current?.click()}
+            className={`border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center text-center space-y-3 cursor-pointer transition-all ${
+              isDragOver
+                ? 'border-blue-600 bg-blue-50/80 scale-[1.01]'
+                : 'border-slate-300 bg-slate-100/70 hover:bg-slate-100 hover:border-slate-400'
+            }`}
+          >
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".pdf"
+              className="hidden"
+              onChange={(e) => {
+                if (e.target.files && e.target.files[0]) {
+                  handleFileUpload(e.target.files[0]);
+                }
+              }}
+            />
+
+            <div className="w-12 h-12 rounded-full bg-blue-100 border border-blue-200 text-blue-700 flex items-center justify-center">
+              {isUploading ? (
+                <Loader2 className="w-6 h-6 animate-spin text-blue-700" />
+              ) : (
+                <UploadCloud className="w-6 h-6 text-blue-700" />
+              )}
+            </div>
+
+            <div className="space-y-1">
+              <h4 className="font-bold text-sm text-slate-800">
+                {isUploading ? 'Uploading PDF...' : 'Add / Upload New PYQ PDF'}
+              </h4>
+              <p className="text-xs text-slate-500 max-w-xs leading-relaxed">
+                Drag and drop any official APPSC question paper PDF here, or click to browse.
+              </p>
+            </div>
+
+            <div className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-blue-700 bg-white px-2.5 py-1 rounded border border-blue-200 shadow-2xs">
+              <Sparkles className="w-3.5 h-3.5 text-blue-600" />
+              <span>Auto-extracts questions & boxed keys with live progress</span>
+            </div>
+
+            <span className="text-[10px] text-slate-400 block pt-1">
+              Or simply commit files to <code className="bg-slate-200 px-1 py-0.5 rounded text-slate-600">pyqs/</code> in Git
+            </span>
           </div>
         </div>
       </main>
@@ -213,7 +342,7 @@ export default function HomePage() {
             </p>
           </div>
           <div className="text-[11px] text-slate-500">
-            Deployable on Vercel • Client-Side Persistence
+            Deployable on Vercel • Client-Side Persistence • Automated PYQ Extraction
           </div>
         </div>
       </footer>

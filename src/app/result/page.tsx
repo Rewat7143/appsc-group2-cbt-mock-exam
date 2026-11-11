@@ -11,7 +11,7 @@ import Link from 'next/link';
 function ResultContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const paperId = searchParams.get('paperId') || 'paper-01';
+  const paperId = searchParams.get('paperId') || searchParams.get('paper') || 'paper-01';
 
   const [result, setResult] = useState<ExamResult | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);

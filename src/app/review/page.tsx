@@ -12,7 +12,7 @@ import Link from 'next/link';
 function ReviewContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const paperId = searchParams.get('paperId') || 'paper-01';
+  const paperId = searchParams.get('paperId') || searchParams.get('paper') || 'paper-01';
 
   const [questions, setQuestions] = useState<Question[]>([]);
   const [result, setResult] = useState<ExamResult | null>(null);
