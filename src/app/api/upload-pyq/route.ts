@@ -40,15 +40,15 @@ export async function POST(request: NextRequest) {
     const initialStatus = {
       active: true,
       paperId: null,
-      paperTitle: safeName.replace(/\.pdf$/i, ''),
+      paperTitle: safeName.replace(/\.pdf$/i, '').replace(/_/g, ' '),
       filename: safeName,
       stage: 'uploaded',
-      stageLabel: `Uploaded ${safeName}. Initializing extraction engine...`,
+      stageLabel: `Uploaded ${safeName}. Starting automated question extraction...`,
       currentPage: 0,
       totalPages: 0,
       questionsFound: 0,
       totalExpected: 150,
-      percent: 5,
+      percent: 10,
       completed: false,
       error: null,
       redirectUrl: null,
@@ -56,11 +56,14 @@ export async function POST(request: NextRequest) {
     };
     fs.writeFileSync(statusPath, JSON.stringify(initialStatus, null, 2));
 
-    // Spawn python auto-process in background
+    // Spawn python auto-process with exact file path
     const scriptPath = path.join(process.cwd(), 'scripts', 'auto_process_pyqs.py');
-    const pythonProc = spawn('python3', [scriptPath], {
+    const logPath = path.join(process.cwd(), 'extraction.log');
+    const outLog = fs.openSync(logPath, 'a');
+
+    const pythonProc = spawn('python3', [scriptPath, '--file', filePath], {
       detached: true,
-      stdio: 'ignore',
+      stdio: ['ignore', outLog, outLog],
       cwd: process.cwd(),
     });
     pythonProc.unref();

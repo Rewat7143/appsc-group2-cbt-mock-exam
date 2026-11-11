@@ -75,31 +75,59 @@ def register_metadata_entry(entry):
         json.dump(papers, f, indent=2)
     print(f"Updated metadata in {METADATA_FILE}")
 
+def identify_paper_id(filename):
+    f_lower = filename.lower()
+    if "paper-ii" in f_lower or "paper_ii" in f_lower or "paper ii" in f_lower or "paper-2" in f_lower:
+        return "paper-02"
+    elif "paper-i" in f_lower or "paper_i" in f_lower or "paper i" in f_lower or "paper-1" in f_lower:
+        return "paper-01"
+    elif "prelim" in f_lower or "screening" in f_lower or "2024" in f_lower or "paper-03" in f_lower or "paper-3" in f_lower:
+        return "paper-03"
+    else:
+        clean = re.sub(r'[^a-zA-Z0-9]', '', f_lower)
+        return f"paper-{clean[:10]}"
+
 def process_paper_file(pdf_path):
     filename = os.path.basename(pdf_path)
     print(f"\n==========================================")
     print(f"Processing new PYQ paper: {filename}")
     print(f"==========================================")
 
-    # Determine paper metadata (check Paper-II before Paper-I so Paper-II is not matched by Paper-I)
-    if "Paper-II" in filename or "Paper II" in filename or "Paper_II" in filename or "paper-02" in filename.lower():
+    # Determine paper metadata
+    f_lower = filename.lower()
+    if "paper-ii" in f_lower or "paper_ii" in f_lower or "paper ii" in f_lower or "paper-2" in f_lower or "paper-02" in f_lower:
         paper_id = "paper-02"
         paper_title = "APPSC Group 2 Mains — Official Paper II"
         subtitle = "Held on 23 February 2025 | Indian & AP Economy & Science and Technology"
+        exam_date = "23 February 2025"
         sections = [
             {"name": "Section A: Indian and AP Economy", "startQuestion": 1, "endQuestion": 75},
             {"name": "Section B: Science and Technology", "startQuestion": 76, "endQuestion": 150}
         ]
         target_json = os.path.join(PAPERS_DIR, "paper-02.json")
-    elif "Paper-I" in filename or "Paper I" in filename or "Paper_I" in filename or "paper-01" in filename.lower():
+    elif "paper-i" in f_lower or "paper_i" in f_lower or "paper i" in f_lower or "paper-1" in f_lower or "paper-01" in f_lower:
         paper_id = "paper-01"
         paper_title = "APPSC Group 2 Mains — Official Paper I"
         subtitle = "Held on 23 February 2025 | Social & Cultural History of AP & Indian Constitution"
+        exam_date = "23 February 2025"
         sections = [
             {"name": "Section A: Social and Cultural History of Andhra Pradesh", "startQuestion": 1, "endQuestion": 75},
             {"name": "Section B: General Overview of the Indian Constitution", "startQuestion": 76, "endQuestion": 150}
         ]
         target_json = os.path.join(PAPERS_DIR, "paper-01.json")
+    elif "prelim" in f_lower or "screening" in f_lower or "2024" in f_lower or "paper-03" in f_lower or "paper-3" in f_lower:
+        paper_id = "paper-03"
+        paper_title = "APPSC Group 2 (Preliminary) Examination — 25 Feb 2024"
+        subtitle = "Held on 25 February 2024 | History, Geography, Indian Society, Current Affairs & Mental Ability"
+        exam_date = "25 February 2024"
+        sections = [
+            {"name": "Section A: Indian History", "startQuestion": 1, "endQuestion": 30},
+            {"name": "Section B: Geography", "startQuestion": 31, "endQuestion": 60},
+            {"name": "Section C: Indian Society", "startQuestion": 61, "endQuestion": 90},
+            {"name": "Section D: Current Affairs", "startQuestion": 91, "endQuestion": 120},
+            {"name": "Section E: Mental Ability", "startQuestion": 121, "endQuestion": 150}
+        ]
+        target_json = os.path.join(PAPERS_DIR, "paper-03.json")
     else:
         # Generic new paper
         count_existing = len(get_registered_paper_ids()) + 1
@@ -107,6 +135,7 @@ def process_paper_file(pdf_path):
         clean_title = os.path.splitext(filename)[0].replace("_", " ")
         paper_title = f"APPSC Examination — {clean_title}"
         subtitle = "Official Previous Year Question Paper"
+        exam_date = "Official Exam"
         sections = [
             {"name": "Section A", "startQuestion": 1, "endQuestion": 75},
             {"name": "Section B", "startQuestion": 76, "endQuestion": 150}
@@ -121,7 +150,7 @@ def process_paper_file(pdf_path):
         filename=filename,
         stage="reading_pdf",
         stage_label=f"Reading PDF: {filename}...",
-        percent=10,
+        percent=15,
         questions_found=0
     )
     time.sleep(1)
@@ -134,10 +163,10 @@ def process_paper_file(pdf_path):
         filename=filename,
         stage="extracting_pages",
         stage_label="Analyzing page layouts and detecting answer box contours...",
-        percent=30,
-        questions_found=35
+        percent=40,
+        questions_found=45
     )
-    time.sleep(1.5)
+    time.sleep(1)
 
     # Step 3: Question Parsing & OCR
     write_status(
@@ -147,10 +176,10 @@ def process_paper_file(pdf_path):
         filename=filename,
         stage="detecting_boxes",
         stage_label="Extracting questions and pairing with official boxed keys...",
-        percent=65,
-        questions_found=110
+        percent=70,
+        questions_found=115
     )
-    time.sleep(1.5)
+    time.sleep(1)
 
     # Step 4: Verification and compilation
     write_status(
@@ -164,7 +193,7 @@ def process_paper_file(pdf_path):
         questions_found=150
     )
 
-    # If it's Paper-II and not yet compiled, compile it
+    # Compile based on paper
     if paper_id == "paper-02":
         try:
             sys.path.insert(0, os.path.join(ROOT_DIR, "scripts"))
@@ -172,6 +201,13 @@ def process_paper_file(pdf_path):
             compile_paper_02.compile_paper_02()
         except Exception as e:
             print(f"Error compiling paper 2: {e}")
+    elif paper_id == "paper-03":
+        try:
+            sys.path.insert(0, os.path.join(ROOT_DIR, "scripts"))
+            import compile_paper_03
+            compile_paper_03.compile_paper_03()
+        except Exception as e:
+            print(f"Error compiling paper 3: {e}")
 
     # Register in metadata
     meta_entry = {
@@ -179,7 +215,7 @@ def process_paper_file(pdf_path):
         "paperCode": f"APPSC-G2-{paper_id.upper()}",
         "title": paper_title,
         "subtitle": subtitle,
-        "examDate": "23 February 2025",
+        "examDate": exam_date,
         "totalQuestions": 150,
         "maxMarks": 150,
         "durationMinutes": 150,
@@ -222,15 +258,12 @@ def scan_and_process():
 
     for pdf in sorted(pdf_files):
         pdf_path = os.path.join(PYQS_DIR, pdf)
-        # Check if corresponding paper is already registered and target json exists
-        if "paper-ii" in pdf.lower() or "paper_ii" in pdf.lower() or "paper ii" in pdf.lower() or "paper-2" in pdf.lower():
-            if "paper-02" not in registered_ids or not os.path.exists(os.path.join(PAPERS_DIR, "paper-02.json")):
-                process_paper_file(pdf_path)
-                registered_ids.append("paper-02")
-        elif "paper-i" in pdf.lower() or "paper_i" in pdf.lower() or "paper i" in pdf.lower() or "paper-1" in pdf.lower():
-            if "paper-01" not in registered_ids or not os.path.exists(os.path.join(PAPERS_DIR, "paper-01.json")):
-                process_paper_file(pdf_path)
-                registered_ids.append("paper-01")
+        pid = identify_paper_id(pdf)
+        target_json = os.path.join(PAPERS_DIR, f"{pid}.json")
+        if pid not in registered_ids or not os.path.exists(target_json):
+            process_paper_file(pdf_path)
+            if pid not in registered_ids:
+                registered_ids.append(pid)
 
 def watch_folder():
     print(f"Watching {PYQS_DIR} for newly added PDF papers... Press Ctrl+C to stop.")
@@ -242,11 +275,10 @@ def watch_folder():
                 for pdf in pdf_files:
                     if pdf not in processed_files:
                         pdf_path = os.path.join(PYQS_DIR, pdf)
+                        pid = identify_paper_id(pdf)
                         registered_ids = get_registered_paper_ids()
-                        # If not processed
-                        is_p1 = "paper-i" in pdf.lower() or "paper i" in pdf.lower()
-                        is_p2 = "paper-ii" in pdf.lower() or "paper ii" in pdf.lower()
-                        if (is_p2 and "paper-02" not in registered_ids) or (is_p1 and "paper-01" not in registered_ids):
+                        target_json = os.path.join(PAPERS_DIR, f"{pid}.json")
+                        if pid not in registered_ids or not os.path.exists(target_json):
                             process_paper_file(pdf_path)
                         processed_files.add(pdf)
             time.sleep(3)

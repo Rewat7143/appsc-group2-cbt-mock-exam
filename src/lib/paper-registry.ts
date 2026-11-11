@@ -26,6 +26,14 @@ export async function getPaperQuestions(paperId: string): Promise<Question[]> {
         // If not bundled yet, proceed to API fetch below
       }
     }
+    if (paperId === 'paper-03') {
+      try {
+        const data = await import('@/data/papers/paper-03.json');
+        return (data.default as unknown) as Question[];
+      } catch {
+        // If not bundled yet, proceed to API fetch below
+      }
+    }
 
     // 2. Dynamic fetch via API for newly uploaded/extracted papers in client runtime
     if (typeof window !== 'undefined') {

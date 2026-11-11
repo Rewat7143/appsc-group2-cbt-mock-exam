@@ -58,5 +58,50 @@
       "uncertainCount": 0,
       "duplicateCount": 0
     }
+  },
+  {
+    "id": "paper-03",
+    "paperCode": "APPSC-G2-PAPER-03",
+    "title": "APPSC Group 2 (Preliminary) Examination \u2014 25 Feb 2024",
+    "subtitle": "Held on 25 February 2024 | History, Geography, Indian Society, Current Affairs & Mental Ability",
+    "examDate": "25 February 2024",
+    "totalQuestions": 150,
+    "maxMarks": 150,
+    "durationMinutes": 150,
+    "negativeMarking": 0,
+    "sections": [
+      {
+        "name": "Section A: Indian History",
+        "startQuestion": 1,
+        "endQuestion": 30
+      },
+      {
+        "name": "Section B: Geography",
+        "startQuestion": 31,
+        "endQuestion": 60
+      },
+      {
+        "name": "Section C: Indian Society",
+        "startQuestion": 61,
+        "endQuestion": 90
+      },
+      {
+        "name": "Section D: Current Affairs",
+        "startQuestion": 91,
+        "endQuestion": 120
+      },
+      {
+        "name": "Section E: Mental Ability",
+        "startQuestion": 121,
+        "endQuestion": 150
+      }
+    ],
+    "extractionStatus": {
+      "totalExpected": 150,
+      "extractedCount": 150,
+      "verifiedCount": 150,
+      "uncertainCount": 0,
+      "duplicateCount": 0
+    }
   }
 ]
